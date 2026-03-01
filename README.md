@@ -153,13 +153,7 @@ A major challenge in AI travel assistants is "hallucination" (making up flights 
 
 ## 👥 The Team
 
-- **[Your Name/Team Name]** - _Lead Developer & Architect_
-
----
-
-## 📝 License
-
-This project is licensed under the ISC License.
+- **[Tech Valkyries]** 
 
 ---
 
