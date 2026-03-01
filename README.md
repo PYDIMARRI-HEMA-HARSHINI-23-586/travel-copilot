@@ -143,17 +143,12 @@ A major challenge in AI travel assistants is "hallucination" (making up flights 
 
 ## 🛤️ Future Roadmap
 
-- [ ] **Live GDS Integration**: Connect to real-time Global Distribution Systems (Amadeus/Sabre/TBO API).
-- [ ] **Multi-Segment Support**: Intelligent handling of multi-city trip planning.
 - [ ] **Live WhatsApp Integration**: Direct "One-Click Send" to customer phone numbers via Twilio.
-- [ ] **Voice-to-Query**: Enable travel agents to search using natural voice commands.
 - [ ] **Personalized Loyalty Insights**: Incorporate customer frequent flyer data into AI reasoning.
 
 ---
 
-## 👥 The Team
-
-- **[Tech Valkyries]** 
+## 👥 The Team:  **Tech Valkyries** 
 
 ---
 
