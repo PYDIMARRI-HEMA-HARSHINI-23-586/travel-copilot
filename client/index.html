@@ -8,13 +8,19 @@
     <!-- 🔥 TOP NAVBAR -->
     <div class="navbar">
       <div class="logo">✈️ TBO Virtual Travel Copilot</div>
-      <div class="agent-info">Logged in as: <strong>Travel Agent</strong></div>
+      <span id="agentName"></span>
     </div>
-
     <div class="app">
       <!-- LEFT PANEL -->
       <div class="sidebar">
         <h3>Saved Chats</h3>
+        <input
+          type="text"
+          id="searchChat"
+          placeholder="Search customer..."
+          oninput="filterChats()"
+          style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #334155; background: #0f172a; color: white;"
+        />
         <ul id="chatList"></ul>
         <button onclick="newChat()">+ New Chat</button>
       </div>

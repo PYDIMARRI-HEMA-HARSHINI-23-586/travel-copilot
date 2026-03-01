@@ -6,7 +6,11 @@ Travel Copilot is an AI-powered flight recommendation assistant designed to help
 
 - **Natural Language Parsing**: Extract travel details (origin, destination, budget, preferences) directly from conversational input using **Llama 3.1 8B**.
 - **Chat Management**: Support for multiple customer chats with persistent storage using `localStorage`.
-- **Status Tracking**: Track the status of each recommendation (e.g., "Draft" or "Confirmed").
+- **Status Lifecycle Tracking**: Track the full lifecycle of each recommendation: **Draft** (initial), **Sent** (itinerary shared with customer), and **Confirmed** (booking approved).
+- **Chat Management & Cleanup**: Organize your workspace by creating new customer sessions or deleting completed cases directly from the sidebar.
+- **Instant Search Filter**: Quickly locate specific customer chats using the real-time sidebar search bar.
+- **Export as PDF**: Generate professional, print-ready booking summaries for customers with a single click.
+- **Agent Login Simulation**: A personalized experience that identifies the active travel agent, persisting the session locally.
 - **AI-Driven Reasoning**: Beyond just filtering, the system analyzes trade-offs between price, duration, and timing to recommend the "Best Choice" with human-like justifications.
 - **Session Persistence**: Maintains context within a session to handle follow-up queries (e.g., if a user doesn't specify a destination in a follow-up, it uses the last known one).
 - **Responsive Dashboard**: A modern interface featuring a sidebar for chat history and a main area for flight recommendations and AI insights.

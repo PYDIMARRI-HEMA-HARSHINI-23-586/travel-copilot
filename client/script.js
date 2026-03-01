@@ -1,3 +1,14 @@
+let agent = localStorage.getItem("agent_name");
+
+if (!agent) {
+  agent = prompt("Enter Agent Name:");
+  localStorage.setItem("agent_name", agent);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("agentName").innerText = "Logged in as: " + agent;
+});
+
 let chats = JSON.parse(localStorage.getItem("copilot_chats")) || [];
 let currentChatId = null;
 
@@ -60,14 +71,51 @@ function renderChatList() {
     const li = document.createElement("li");
 
     li.innerHTML = `
-      <strong>${chat.customerName}</strong>
-      <span style="font-size:12px; opacity:0.7;">(${chat.status})</span>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span>
+          <strong>${chat.customerName}</strong>
+          <span style="font-size:12px; opacity:0.7;">(${chat.status})</span>
+        </span>
+        <span style="cursor:pointer; color:#ef4444;" onclick="deleteChat('${chat.id}')">✕</span>
+      </div>
     `;
 
-    li.onclick = () => loadChat(chat.id);
+    li.onclick = (e) => {
+      if (e.target.innerText !== "✕") {
+        loadChat(chat.id);
+      }
+    };
     li.dataset.id = chat.id;
 
     list.appendChild(li);
+  });
+}
+
+function deleteChat(id) {
+  chats = chats.filter((c) => c.id !== id);
+
+  if (currentChatId === id) {
+    currentChatId = null;
+  }
+
+  saveChats();
+  renderChatList();
+
+  if (chats.length > 0) {
+    loadChat(chats[0].id);
+  } else {
+    newChat();
+  }
+}
+
+function filterChats() {
+  const search = document.getElementById("searchChat").value.toLowerCase();
+  const items = document.querySelectorAll("#chatList li");
+
+  items.forEach((item) => {
+    item.style.display = item.innerText.toLowerCase().includes(search)
+      ? "block"
+      : "none";
   });
 }
 
@@ -156,32 +204,40 @@ function displayResults(data) {
     saveChats();
   }
 
-  // If no recommendations
-  if (!data || !data.recommendations || data.recommendations.length === 0) {
-    container.innerHTML = `
-      <div class="status-badge status-draft">
-        Status: ${chat.status}
-      </div>
-      <p>No flights found.</p>
-    `;
-    return;
-  }
-
   // Status Badge
   const statusDiv = document.createElement("div");
   statusDiv.classList.add("status-badge");
   statusDiv.classList.add(
-    chat.status === "Confirmed" ? "status-confirmed" : "status-draft",
+    chat.status === "Confirmed"
+      ? "status-confirmed"
+      : chat.status === "Sent"
+      ? "status-sent"
+      : "status-draft",
   );
   statusDiv.innerText = "Status: " + chat.status;
 
   container.appendChild(statusDiv);
 
-  // Confirm Button
-  if (chat.status !== "Confirmed") {
+  // Lifecycle Buttons
+  if (chat.status === "Draft") {
+    const sendBtn = document.createElement("button");
+    sendBtn.innerText = "Send to Customer";
+    sendBtn.style.marginBottom = "10px";
+
+    sendBtn.onclick = function () {
+      chat.status = "Sent";
+      saveChats();
+      renderChatList();
+      displayResults(chat.results);
+    };
+
+    container.appendChild(sendBtn);
+  }
+
+  if (chat.status === "Sent") {
     const confirmBtn = document.createElement("button");
     confirmBtn.innerText = "Mark as Confirmed";
-    confirmBtn.classList.add("confirm-btn");
+    confirmBtn.style.marginBottom = "10px";
 
     confirmBtn.onclick = function () {
       chat.status = "Confirmed";
@@ -191,6 +247,25 @@ function displayResults(data) {
     };
 
     container.appendChild(confirmBtn);
+  }
+
+  // Export PDF Button
+  const exportBtn = document.createElement("button");
+  exportBtn.innerText = "Export as PDF";
+  exportBtn.style.marginBottom = "10px";
+
+  exportBtn.onclick = function () {
+    window.print();
+  };
+
+  container.appendChild(exportBtn);
+
+  // If no recommendations
+  if (!data || !data.recommendations || data.recommendations.length === 0) {
+    const noFlights = document.createElement("p");
+    noFlights.innerText = "No flights found.";
+    container.appendChild(noFlights);
+    return;
   }
 
   // Best Choice (safe check)
@@ -234,3 +309,4 @@ function displayResults(data) {
     container.appendChild(div);
   });
 }
+
