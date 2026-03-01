@@ -1,4 +1,4 @@
-# ✈️ TBO Virtual Travel Copilot
+# ✈️ TBO Virtual Travel Copilot: Flights Intelligence Engine
 
 **Empowering Travel Agents with AI-Driven Intelligence**
 
@@ -8,9 +8,9 @@
 
 Travel agents are at the heart of planning and booking trips, but they are often overwhelmed by managing multiple systems, diverse customer preferences, and dynamic pricing. Manual workflows for discovering, recommending, and booking travel products lead to friction and inefficiency. Agents need a way to act faster, smarter, and more confidently to deliver personalized experiences.
 
-## 💡 The Solution: Travel Copilot
+## 💡 The Solution: Flights Intelligence Engine
 
-**TBO Virtual Travel Copilot** is an intelligent, semi-autonomous assistant designed to re-imagine the agent workflow. By leveraging Large Language Models (LLMs), it acts as a context-aware decision support system, anticipating needs, suggesting optimal actions, and reducing manual effort through natural language interactions. It transforms raw customer requests into professional, actionable itineraries in seconds.
+**TBO Virtual Travel Copilot** is a specialized **Flights Intelligence Engine** designed to re-imagine the agent workflow. By leveraging Large Language Models (LLMs), it acts as a context-aware decision support system, anticipating needs, suggesting optimal actions, and reducing manual effort through natural language interactions. It transforms raw customer requests into professional, actionable itineraries in seconds.
 
 ---
 
