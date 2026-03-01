@@ -1,18 +1,44 @@
 <!doctype html>
 <html>
   <head>
-    <title>Travel Copilot</title>
+    <title>TBO Virtual Travel Copilot</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>Travel Agent Copilot</h1>
-
-    <div>
-      <input type="text" id="query" placeholder="Enter customer request..." />
-      <button onclick="sendQuery()">Ask Copilot</button>
+    <!-- 🔥 TOP NAVBAR -->
+    <div class="navbar">
+      <div class="logo">✈️ TBO Virtual Travel Copilot</div>
+      <div class="agent-info">Logged in as: <strong>Travel Agent</strong></div>
     </div>
 
-    <div id="response"></div>
+    <div class="app">
+      <!-- LEFT PANEL -->
+      <div class="sidebar">
+        <h3>Saved Chats</h3>
+        <ul id="chatList"></ul>
+        <button onclick="newChat()">+ New Chat</button>
+      </div>
+
+      <!-- MIDDLE PANEL -->
+      <div class="chat-section">
+        <div id="chatWindow" class="chat-window"></div>
+
+        <div class="input-area">
+          <input
+            type="text"
+            id="query"
+            placeholder="Type customer request..."
+          />
+          <button onclick="sendQuery()">Send</button>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="recommendation-section">
+        <h3>Booking Insights</h3>
+        <div id="response"></div>
+      </div>
+    </div>
 
     <script src="script.js"></script>
   </body>
