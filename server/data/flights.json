@@ -42,5 +42,181 @@
     "duration": 3.2,
     "layover": 0,
     "airline": "Vistara"
+  },
+  {
+    "id": 5,
+    "from": "Dubai",
+    "to": "Delhi",
+    "departure": "08:00",
+    "arrival": "12:30",
+    "price": 14000,
+    "duration": 3.5,
+    "layover": 0,
+    "airline": "Emirates"
+  },
+  {
+    "id": 6,
+    "from": "Dubai",
+    "to": "Delhi",
+    "departure": "22:00",
+    "arrival": "02:30",
+    "price": 11000,
+    "duration": 3.5,
+    "layover": 0,
+    "airline": "SpiceJet"
+  },
+  {
+    "id": 7,
+    "from": "Delhi",
+    "to": "London",
+    "departure": "02:15",
+    "arrival": "06:30",
+    "price": 55000,
+    "duration": 9.5,
+    "layover": 0,
+    "airline": "Air India"
+  },
+  {
+    "id": 8,
+    "from": "Delhi",
+    "to": "London",
+    "departure": "10:00",
+    "arrival": "18:45",
+    "price": 42000,
+    "duration": 13.5,
+    "layover": 1,
+    "airline": "Qatar Airways"
+  },
+  {
+    "id": 9,
+    "from": "Delhi",
+    "to": "London",
+    "departure": "13:30",
+    "arrival": "18:00",
+    "price": 62000,
+    "duration": 9.2,
+    "layover": 0,
+    "airline": "British Airways"
+  },
+  {
+    "id": 10,
+    "from": "London",
+    "to": "Delhi",
+    "departure": "20:00",
+    "arrival": "09:00",
+    "price": 48000,
+    "duration": 8.5,
+    "layover": 0,
+    "airline": "Virgin Atlantic"
+  },
+  {
+    "id": 11,
+    "from": "Delhi",
+    "to": "Singapore",
+    "departure": "23:00",
+    "arrival": "07:00",
+    "price": 28000,
+    "duration": 5.5,
+    "layover": 0,
+    "airline": "Singapore Airlines"
+  },
+  {
+    "id": 12,
+    "from": "Delhi",
+    "to": "Singapore",
+    "departure": "09:00",
+    "arrival": "17:30",
+    "price": 19000,
+    "duration": 6,
+    "layover": 0,
+    "airline": "Air India Express"
+  },
+  {
+    "id": 13,
+    "from": "Singapore",
+    "to": "Delhi",
+    "departure": "19:00",
+    "arrival": "22:30",
+    "price": 22000,
+    "duration": 6,
+    "layover": 0,
+    "airline": "Singapore Airlines"
+  },
+  {
+    "id": 14,
+    "from": "Mumbai",
+    "to": "Dubai",
+    "departure": "16:00",
+    "arrival": "18:00",
+    "price": 14500,
+    "duration": 3.5,
+    "layover": 0,
+    "airline": "Air India"
+  },
+  {
+    "id": 15,
+    "from": "Mumbai",
+    "to": "Dubai",
+    "departure": "20:30",
+    "arrival": "22:15",
+    "price": 17000,
+    "duration": 3.2,
+    "layover": 0,
+    "airline": "Emirates"
+  },
+  {
+    "id": 16,
+    "from": "Mumbai",
+    "to": "Dubai",
+    "departure": "07:00",
+    "arrival": "09:00",
+    "price": 9500,
+    "duration": 3.5,
+    "layover": 0,
+    "airline": "Akasa Air"
+  },
+  {
+    "id": 17,
+    "from": "Dubai",
+    "to": "Mumbai",
+    "departure": "14:00",
+    "arrival": "18:30",
+    "price": 13000,
+    "duration": 3,
+    "layover": 0,
+    "airline": "FlyDubai"
+  },
+  {
+    "id": 18,
+    "from": "Delhi",
+    "to": "New York",
+    "departure": "01:30",
+    "arrival": "07:00",
+    "price": 85000,
+    "duration": 15,
+    "layover": 0,
+    "airline": "Air India"
+  },
+  {
+    "id": 19,
+    "from": "Delhi",
+    "to": "New York",
+    "departure": "11:00",
+    "arrival": "21:30",
+    "price": 72000,
+    "duration": 19,
+    "layover": 1,
+    "airline": "Qatar Airways"
+  },
+  {
+    "id": 20,
+    "from": "New York",
+    "to": "Delhi",
+    "departure": "21:00",
+    "arrival": "20:30",
+    "price": 78000,
+    "duration": 14.5,
+    "layover": 0,
+    "airline": "United Airlines"
   }
 ]

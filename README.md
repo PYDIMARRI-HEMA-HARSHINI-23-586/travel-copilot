@@ -4,9 +4,18 @@ Travel Copilot is an AI-powered flight recommendation assistant designed to help
 
 ## 🌟 Key Features
 
+- **Modern Welcome Interface**: A clean, "ChatGPT-style" landing screen for new sessions, providing clear onboarding steps for travel agents.
+- **Agent Identity Management**: Easily update and personalize your professional profile with the built-in "Edit Agent Name" functionality.
 - **Natural Language Parsing**: Extract travel details (origin, destination, budget, preferences) directly from conversational input using **Llama 3.1 8B**.
 - **Chat Management**: Support for multiple customer chats with persistent storage using `localStorage`.
 - **Status Lifecycle Tracking**: Track the full lifecycle of each recommendation: **Draft** (initial), **Sent** (itinerary shared with customer), and **Confirmed** (booking approved).
+- **AI Client Message Drafter**: Generate professional, persuasive summaries for customers (ready for Email/WhatsApp) using AI reasoning.
+- **Smart Flexible Date Insights**: Proactive tips suggesting cheaper travel dates to help customers save money.
+- **Destination Context (Agent Briefing)**: Real-time briefings on destination weather, visa requirements, and local travel tips.
+- **One-Click Booking Simulation**: Experience the full workflow with an automated "Processing Booking" state that finalizes itineraries.
+- **Round-Trip Support**: Intelligent handling of outbound and return flight itineraries within a single conversation.
+- **Expanded Flight Database**: Support for international routes including Singapore, London, Dubai, and New York.
+- **Proactive Alerts**: Simulation of real-time price drops to show how the Copilot anticipates needs.
 - **Chat Management & Cleanup**: Organize your workspace by creating new customer sessions or deleting completed cases directly from the sidebar.
 - **Instant Search Filter**: Quickly locate specific customer chats using the real-time sidebar search bar.
 - **Export as PDF**: Generate professional, print-ready booking summaries for customers with a single click.
@@ -25,6 +34,8 @@ The project follows a decoupled Client-Server architecture:
 - **Service Layer**:
     - `parser.js`: Uses **Groq (Llama 3.1 8B Instant)** to transform raw text into structured JSON.
     - `reasoner.js`: Employs AI to evaluate flight options and provide human-like justification for recommendations.
+    - `drafter.js`: Uses AI to generate professional client-facing summaries.
+    - `destinationBrief.js`: Provides contextual knowledge about destinations (Weather, Visa, Tips).
 - **Routing**: RESTful API endpoints managed via Express.
 - **Data**: A mock flight database stored in `flights.json` containing fields like airline, departure/arrival times, price, duration, and layovers.
 
@@ -86,39 +97,8 @@ The project follows a decoupled Client-Server architecture:
 ### POST `/recommend`
 Analyzes a user query and returns flight recommendations.
 
-**Request Body:**
-```json
-{
-  "query": "Find me a flight from Delhi to Dubai under 20000 for this evening"
-}
-```
-
-**Response:**
-```json
-{
-  "parsedInput": {
-    "from": "Delhi",
-    "to": "Dubai",
-    "preference": "evening",
-    "budget": 20000
-  },
-  "bestChoice": {
-    "flight": {
-      "id": 1,
-      "from": "Delhi",
-      "to": "Dubai",
-      "departure": "18:30",
-      "arrival": "21:00",
-      "price": 18000,
-      "duration": 3.5,
-      "layover": 0,
-      "airline": "Emirates"
-    },
-    "reason": "This flight fits your budget and evening preference perfectly while being a direct flight with a top-tier airline."
-  },
-  "recommendations": [ ... ]
-}
-```
+### POST `/recommend/draft`
+Generates a professional client message based on flight data.
 
 ---
 

@@ -22,7 +22,9 @@ Return ONLY valid JSON in this format:
   "from": string | null,
   "to": string | null,
   "preference": "evening" | "morning" | null,
-  "budget": number | null
+  "budget": number | null,
+  "isRoundTrip": boolean,
+  "returnDate": string | null
 }
 
 If a field is missing, return null.

@@ -2,11 +2,28 @@ let agent = localStorage.getItem("agent_name");
 
 if (!agent) {
   agent = prompt("Enter Agent Name:");
-  localStorage.setItem("agent_name", agent);
+  if (agent) {
+    localStorage.setItem("agent_name", agent);
+  } else {
+    agent = "Travel Agent"; // fallback
+  }
+}
+
+function editAgentName() {
+  const newName = prompt("Enter New Agent Name:", agent);
+  if (newName) {
+    agent = newName;
+    localStorage.setItem("agent_name", agent);
+    updateAgentNameUI();
+  }
+}
+
+function updateAgentNameUI() {
+  document.getElementById("agentName").innerText = "Logged in as: " + agent;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("agentName").innerText = "Logged in as: " + agent;
+  updateAgentNameUI();
 });
 
 let chats = JSON.parse(localStorage.getItem("copilot_chats")) || [];
@@ -15,12 +32,58 @@ let currentChatId = null;
 // ------------------ INIT ------------------
 window.onload = function () {
   if (chats.length === 0) {
-    newChat(); // auto-create first chat
+    showWelcomeScreen();
   } else {
     renderChatList();
-    loadChat(chats[0].id); // load most recent
+    loadChat(chats[0].id);
   }
 };
+
+// ------------------ UI STATES ------------------
+
+function showWelcomeScreen() {
+  currentChatId = null;
+  const chatWindow = document.getElementById("chatWindow");
+  const responseArea = document.getElementById("response");
+  const inputArea = document.querySelector(".input-area");
+
+  chatWindow.innerHTML = `
+    <div class="welcome-screen">
+      <h1>✈️ TBO Travel Copilot</h1>
+      <p>Your AI-powered assistant for intelligent flight recommendations.</p>
+      
+      <div class="steps">
+        <div class="step">
+          <span class="icon">➕</span>
+          <strong>Create a Chat</strong>
+          <p>Click "+ New Chat" to start a new customer session.</p>
+        </div>
+        <div class="step">
+          <span class="icon">🤖</span>
+          <strong>Ask the Copilot</strong>
+          <p>Type requests like "Delhi to Dubai under 20k".</p>
+        </div>
+        <div class="step">
+          <span class="icon">📄</span>
+          <strong>Finalize & Share</strong>
+          <p>Draft professional messages and export PDF itineraries.</p>
+        </div>
+      </div>
+      
+      <button onclick="newChat()" class="start-btn">Get Started</button>
+    </div>
+  `;
+
+  responseArea.innerHTML = `
+    <div style="text-align:center; opacity:0.5; margin-top:50px;">
+      <p>Booking insights will appear here after a search.</p>
+    </div>
+  `;
+
+  // Hide/Disable main input when no chat is active
+  if (inputArea) inputArea.style.opacity = "0.3";
+  document.getElementById("query").disabled = true;
+}
 
 // ------------------ CHAT MANAGEMENT ------------------
 
@@ -49,8 +112,15 @@ function loadChat(id) {
   const chat = chats.find((c) => c.id === id);
   if (!chat) return;
 
-  document.getElementById("chatWindow").innerHTML = "";
+  const chatWindow = document.getElementById("chatWindow");
+  const inputArea = document.querySelector(".input-area");
+  
+  chatWindow.innerHTML = "";
   document.getElementById("response").innerHTML = "";
+  
+  // Enable input
+  if (inputArea) inputArea.style.opacity = "1";
+  document.getElementById("query").disabled = false;
 
   chat.messages.forEach((msg) => {
     addMessage(msg.content, msg.sender, false);
@@ -104,7 +174,7 @@ function deleteChat(id) {
   if (chats.length > 0) {
     loadChat(chats[0].id);
   } else {
-    newChat();
+    showWelcomeScreen();
   }
 }
 
@@ -167,7 +237,7 @@ async function sendQuery() {
     const res = await fetch("http://localhost:5000/recommend", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, chatId: currentChatId }),
     });
 
     const data = await res.json();
@@ -186,6 +256,57 @@ async function sendQuery() {
     displayResults(data);
   } catch (err) {
     addMessage("⚠️ Something went wrong.", "copilot");
+  }
+}
+
+// ------------------ DRAFT MESSAGE ------------------
+
+async function draftMessage(btn) {
+  const chat = chats.find((c) => c.id === currentChatId);
+  if (!chat || !chat.results) {
+    addMessage("⚠️ Please search for flights first before drafting a message.", "copilot");
+    return;
+  }
+
+  const originalText = btn.innerText;
+  btn.innerText = "⌛ Drafting...";
+  btn.disabled = true;
+
+  addMessage("✍️ Drafting professional message for " + chat.customerName + "...", "copilot", false);
+
+  try {
+    const res = await fetch("http://localhost:5000/recommend/draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customerName: chat.customerName,
+        agentName: agent,
+        flightData: chat.results,
+      }),
+    });
+
+    const data = await res.json();
+    
+    // Reset button
+    btn.innerText = originalText;
+    btn.disabled = false;
+
+    if (data.draft) {
+      // Clear the "Drafting..." helper message
+      const chatWindow = document.getElementById("chatWindow");
+      if (chatWindow.lastChild && chatWindow.lastChild.innerText.includes("Drafting professional message")) {
+        chatWindow.removeChild(chatWindow.lastChild);
+      }
+
+      addMessage("📋 AI Suggested Message:", "copilot");
+      addMessage(data.draft, "copilot");
+    } else {
+      addMessage("⚠️ Could not generate draft. Please try again.", "copilot");
+    }
+  } catch (err) {
+    btn.innerText = originalText;
+    btn.disabled = false;
+    addMessage("⚠️ Connection error while drafting message.", "copilot");
   }
 }
 
@@ -220,10 +341,13 @@ function displayResults(data) {
 
   // Lifecycle Buttons
   if (chat.status === "Draft") {
+    const btnRow = document.createElement("div");
+    btnRow.style.display = "flex";
+    btnRow.style.gap = "10px";
+    btnRow.style.marginBottom = "10px";
+
     const sendBtn = document.createElement("button");
     sendBtn.innerText = "Send to Customer";
-    sendBtn.style.marginBottom = "10px";
-
     sendBtn.onclick = function () {
       chat.status = "Sent";
       saveChats();
@@ -231,7 +355,19 @@ function displayResults(data) {
       displayResults(chat.results);
     };
 
-    container.appendChild(sendBtn);
+    const alertBtn = document.createElement("button");
+    alertBtn.innerText = "🔔 Simulate Price Drop";
+    alertBtn.style.background = "#8b5cf6";
+    alertBtn.onclick = function () {
+      addMessage(
+        "⚡ PROACTIVE ALERT: I've detected a ₹2,000 price drop on the Emirates flight! Should I update the itinerary?",
+        "copilot",
+      );
+    };
+
+    btnRow.appendChild(sendBtn);
+    btnRow.appendChild(alertBtn);
+    container.appendChild(btnRow);
   }
 
   if (chat.status === "Sent") {
@@ -240,25 +376,81 @@ function displayResults(data) {
     confirmBtn.style.marginBottom = "10px";
 
     confirmBtn.onclick = function () {
-      chat.status = "Confirmed";
-      saveChats();
-      renderChatList();
-      displayResults(chat.results);
+      confirmBtn.innerText = "⌛ Processing Booking...";
+      confirmBtn.disabled = true;
+
+      setTimeout(() => {
+        chat.status = "Confirmed";
+        saveChats();
+        renderChatList();
+        displayResults(chat.results);
+        addMessage(
+          "✅ Booking confirmed! The itinerary has been finalized.",
+          "copilot",
+        );
+      }, 2000);
     };
 
     container.appendChild(confirmBtn);
   }
 
-  // Export PDF Button
-  const exportBtn = document.createElement("button");
-  exportBtn.innerText = "Export as PDF";
-  exportBtn.style.marginBottom = "10px";
+  // Action Row (Draft Message + PDF)
+  const actionRow = document.createElement("div");
+  actionRow.style.display = "flex";
+  actionRow.style.gap = "10px";
+  actionRow.style.marginBottom = "10px";
 
+  const draftBtn = document.createElement("button");
+  draftBtn.innerText = "✍️ Draft Client Message";
+  draftBtn.style.background = "#0ea5e9";
+  draftBtn.onclick = function() { draftMessage(this); };
+
+  const exportBtn = document.createElement("button");
+  exportBtn.innerText = "📄 Export PDF";
   exportBtn.onclick = function () {
     window.print();
   };
 
-  container.appendChild(exportBtn);
+  actionRow.appendChild(draftBtn);
+  actionRow.appendChild(exportBtn);
+  container.appendChild(actionRow);
+
+  // Agent Briefing
+  if (data.destinationBrief) {
+    const brief = data.destinationBrief;
+    const briefDiv = document.createElement("div");
+    briefDiv.style.background = "#1e293b";
+    briefDiv.style.border = "1px solid #334155";
+    briefDiv.style.padding = "12px";
+    briefDiv.style.borderRadius = "8px";
+    briefDiv.style.marginBottom = "15px";
+    briefDiv.style.fontSize = "13px";
+
+    briefDiv.innerHTML = `
+      <h4 style="margin-top:0; color:#38bdf8; display:flex; align-items:center; gap:5px;">
+        🌍 Agent Briefing: ${data.parsedInput.to}
+      </h4>
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <span>🌡️ <strong>Weather:</strong> ${brief.weather}</span>
+        <span>🛂 <strong>Visa:</strong> ${brief.visa}</span>
+        <span style="color:#94a3b8; font-style:italic;">💡 ${brief.tip}</span>
+      </div>
+    `;
+    container.appendChild(briefDiv);
+  }
+
+  // Flexible Tip
+  if (data.flexibleTip) {
+    const tipDiv = document.createElement("div");
+    tipDiv.style.background = "rgba(245, 158, 11, 0.1)";
+    tipDiv.style.borderLeft = "4px solid #f59e0b";
+    tipDiv.style.padding = "10px";
+    tipDiv.style.marginBottom = "15px";
+    tipDiv.style.fontSize = "13px";
+    tipDiv.style.color = "#f59e0b";
+    tipDiv.innerHTML = `📅 <strong>Flexible Date Insight:</strong> ${data.flexibleTip}`;
+    container.appendChild(tipDiv);
+  }
 
   // If no recommendations
   if (!data || !data.recommendations || data.recommendations.length === 0) {
@@ -271,19 +463,36 @@ function displayResults(data) {
   // Best Choice (safe check)
   if (data.bestChoice && data.bestChoice.flight) {
     const best = data.bestChoice;
+    const tagsHtml = best.flight.tags
+      ? best.flight.tags
+          .map(
+            (t) =>
+              `<span style="background:#334155; padding:2px 6px; border-radius:4px; font-size:10px; margin-right:5px;">${t}</span>`,
+          )
+          .join("")
+      : "";
+
+    let returnHtml = "";
+    if (best.returnFlight) {
+      returnHtml = `
+        <div style="margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.2);">
+          <strong>🔄 Return: ${best.returnFlight.airline}</strong><br>
+          Departure: ${best.returnFlight.departure} | Arrival: ${best.returnFlight.arrival}
+        </div>
+      `;
+    }
 
     const bestDiv = document.createElement("div");
     bestDiv.classList.add("best-choice-card");
 
     bestDiv.innerHTML = `
+      <div style="margin-bottom:8px;">${tagsHtml}</div>
       <h3>🌟 Best Choice</h3>
-      <strong>${best.flight.airline}</strong><br>
-      Departure: ${best.flight.departure}<br>
-      Arrival: ${best.flight.arrival}<br>
-      Price: ₹${best.flight.price}<br>
-      Duration: ${best.flight.duration} hrs<br>
-      Layover: ${best.flight.layover}<br>
-      <strong>Reason:</strong> ${best.reason}
+      <strong>🛫 Outbound: ${best.flight.airline}</strong><br>
+      Departure: ${best.flight.departure} | Arrival: ${best.flight.arrival}<br>
+      Price: ₹${best.flight.price}${best.returnFlight ? " (One Way)" : ""}<br>
+      ${returnHtml}
+      <div style="margin-top:10px;"><strong>Reason:</strong> ${best.reason}</div>
     `;
 
     container.appendChild(bestDiv);
@@ -292,21 +501,38 @@ function displayResults(data) {
   // Other Recommendations
   data.recommendations.forEach((rec) => {
     if (!rec.flight) return;
+    const tagsHtml = rec.flight.tags
+      ? rec.flight.tags
+          .map(
+            (t) =>
+              `<span style="background:#334155; padding:2px 6px; border-radius:4px; font-size:10px; margin-right:5px;">${t}</span>`,
+          )
+          .join("")
+      : "";
+
+    let returnHtml = "";
+    if (rec.returnFlight) {
+      returnHtml = `
+        <div style="margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.2);">
+          <strong>🔄 Return: ${rec.returnFlight.airline}</strong><br>
+          Departure: ${rec.returnFlight.departure} | Arrival: ${rec.returnFlight.arrival}
+        </div>
+      `;
+    }
 
     const div = document.createElement("div");
     div.classList.add("recommend-card");
 
     div.innerHTML = `
-      <strong>${rec.flight.airline}</strong><br>
-      Departure: ${rec.flight.departure}<br>
-      Arrival: ${rec.flight.arrival}<br>
-      Price: ₹${rec.flight.price}<br>
-      Duration: ${rec.flight.duration} hrs<br>
-      Layover: ${rec.flight.layover}<br>
-      <strong>Reason:</strong> ${rec.reason}
+      <div style="margin-bottom:8px;">${tagsHtml}</div>
+      <strong>🛫 Outbound: ${rec.flight.airline}</strong><br>
+      Departure: ${rec.flight.departure} | Arrival: ${rec.flight.arrival}<br>
+      ${returnHtml}
+      <div style="margin-top:10px;"><strong>Reason:</strong> ${rec.reason}</div>
     `;
 
     container.appendChild(div);
   });
 }
+
 
