@@ -16,7 +16,19 @@ Travel agents are at the heart of planning and booking trips, but they are often
 
 ## 🎬 Demo & Visuals
 
-> **[https://drive.google.com/file/d/1YKo6tslhz6TdzVJq0ar7EAAVLQQHa7kx/view?usp=sharing]** — Watch the Copilot in action as it handles a complex multi-turn booking request.
+---
+
+### ✈️ AI Travel Copilot in Action
+
+> Watch the Copilot intelligently understand preferences, compare options, and complete a full multi-turn booking journey seamlessly.
+
+<br>
+
+<p align="center">
+  <a href="https://drive.google.com/file/d/1YKo6tslhz6TdzVJq0ar7EAAVLQQHa7kx/view?usp=sharing">
+    <img src="https://img.shields.io/badge/🚀%20Launch%20Demo-000000?style=for-the-badge&logo=google-chrome&logoColor=white" />
+  </a>
+</p>
 
 ---
 
