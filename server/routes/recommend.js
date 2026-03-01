@@ -5,6 +5,7 @@ const parseQuery = require("../services/parser");
 const generateReasoning = require("../services/reasoner");
 const draftClientMessage = require("../services/drafter");
 const getDestinationBrief = require("../services/destinationBrief");
+const getHotelRecommendations = require("../services/hotelService");
 
 // Per-chat context storage (In-memory)
 let chatContexts = {};
@@ -31,7 +32,6 @@ router.post("/", async (req, res) => {
 
   // 🔥 Precision Merging Logic
   if (lastParsedInput) {
-    console.log("Existing context found. Merging...");
     parsed = {
       from: parsed.from !== null ? parsed.from : lastParsedInput.from,
       to: parsed.to !== null ? parsed.to : lastParsedInput.to,
@@ -42,15 +42,13 @@ router.post("/", async (req, res) => {
     };
   }
 
-  // Save context for this specific chat
+  // Save context
   if (chatId) {
     chatContexts[chatId] = parsed;
-    console.log("Updated Context:", JSON.stringify(parsed, null, 2));
   }
 
   const { from, to, preference, budget, isRoundTrip } = parsed;
 
-  // If even after merging we don't have basic info
   if (!from || !to) {
     return res.json({ 
       error: "I need to know both origin and destination. (e.g., 'Delhi to Dubai')",
@@ -58,28 +56,50 @@ router.post("/", async (req, res) => {
     });
   }
 
+  // 1. EXACT SEARCH
   let filtered = flights.filter((f) => f.from === from && f.to === to);
+  let finalPreference = preference;
+  let finalBudget = budget;
 
   if (preference === "evening") {
     filtered = filtered.filter((f) => parseInt(f.departure) >= 18);
   }
-
   if (budget) {
     filtered = filtered.filter((f) => f.price <= budget);
   }
 
+  let alternatives = [];
+  let alternativeNote = null;
+
+  // 2. RELAXED SEARCH (If exact fails)
   if (filtered.length === 0) {
-    return res.json({ 
-      error: `No flights found from ${from} to ${to} matching your criteria.`,
-      parsedInput: parsed 
-    });
+    console.log("No exact matches. Relaxing constraints...");
+    
+    // Try ignoring budget first
+    let relaxedBudget = flights.filter(f => f.from === from && f.to === to);
+    if (preference === "evening") relaxedBudget = relaxedBudget.filter(f => parseInt(f.departure) >= 18);
+    
+    if (relaxedBudget.length > 0) {
+      alternatives = relaxedBudget.slice(0, 2);
+      alternativeNote = "I couldn't find anything in your budget, but here are the closest options if you can stretch it.";
+    } else {
+      // Try ignoring everything but cities
+      alternatives = flights.filter(f => f.from === from && f.to === to).slice(0, 2);
+      alternativeNote = "No exact matches for your preferences. Here are the available flights for this route.";
+    }
   }
 
-  // Identify Cheapest and Fastest
-  const cheapestPrice = Math.min(...filtered.map((f) => f.price));
-  const fastestDuration = Math.min(...filtered.map((f) => f.duration));
+  if (filtered.length === 0 && alternatives.length === 0) {
+    return res.json({ error: `No flights found from ${from} to ${to}.`, parsedInput: parsed });
+  }
 
-  const resultsWithTags = filtered.map((f) => {
+  const resultsToProcess = filtered.length > 0 ? filtered : alternatives;
+
+  // Identify Cheapest and Fastest
+  const cheapestPrice = Math.min(...resultsToProcess.map((f) => f.price));
+  const fastestDuration = Math.min(...resultsToProcess.map((f) => f.duration));
+
+  const resultsWithTags = resultsToProcess.map((f) => {
     let tags = [];
     if (f.price === cheapestPrice) tags.push("💰 Cheapest");
     if (f.duration === fastestDuration) tags.push("⚡ Fastest");
@@ -97,12 +117,10 @@ router.post("/", async (req, res) => {
   // Destination Brief
   const destinationBrief = to ? await getDestinationBrief(to) : null;
 
-  // Generate Return Flights if Round Trip
+  // Generate Return Flights
   let returnOptions = [];
   if (isRoundTrip) {
-    returnOptions = flights
-      .filter((f) => f.from === to && f.to === from)
-      .slice(0, 2);
+    returnOptions = flights.filter((f) => f.from === to && f.to === from).slice(0, 2);
   }
 
   // AI Reasoning
@@ -112,10 +130,6 @@ router.post("/", async (req, res) => {
   } catch (err) {
     console.error("Reasoning failed:", err);
     return res.status(500).json({ error: "Reasoning failed" });
-  }
-
-  if (!reasoningResult) {
-    return res.json({ error: "Could not generate reasoning.", parsedInput: parsed });
   }
 
   const recommendations = shortlisted.map((flight) => {
@@ -134,7 +148,9 @@ router.post("/", async (req, res) => {
     bestChoice,
     recommendations,
     flexibleTip,
-    destinationBrief
+    destinationBrief,
+    alternativeNote,
+    isAlternative: filtered.length === 0
   });
 });
 
@@ -145,6 +161,16 @@ router.post("/draft", async (req, res) => {
     res.json({ draft });
   } catch (err) {
     res.status(500).json({ error: "Drafter failed" });
+  }
+});
+
+router.post("/hotels", async (req, res) => {
+  const { destination } = req.body;
+  try {
+    const hotels = await getHotelRecommendations(destination);
+    res.json({ hotels });
+  } catch (err) {
+    res.status(500).json({ error: "Hotel fetch failed" });
   }
 });
 

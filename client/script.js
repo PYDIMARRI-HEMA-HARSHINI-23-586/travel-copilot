@@ -310,6 +310,35 @@ async function draftMessage(btn) {
   }
 }
 
+// ------------------ HOTEL SEARCH ------------------
+
+async function fetchHotels() {
+  const chat = chats.find((c) => c.id === currentChatId);
+  if (!chat || !chat.results) return;
+
+  addMessage("🏨 Finding hotel recommendations for " + chat.results.parsedInput.to + "...", "copilot", false);
+
+  try {
+    const res = await fetch("http://localhost:5000/recommend/hotels", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ destination: chat.results.parsedInput.to }),
+    });
+
+    const data = await res.json();
+    if (data.hotels) {
+      addMessage("🌟 Here are some stay options for your client:", "copilot");
+      let hotelMsg = "";
+      data.hotels.forEach(h => {
+        hotelMsg += `• ${h.name} (${h.rating}) - ${h.price} in ${h.location}\n`;
+      });
+      addMessage(hotelMsg, "copilot");
+    }
+  } catch (err) {
+    addMessage("⚠️ Could not fetch hotels.", "copilot");
+  }
+}
+
 // ------------------ DISPLAY RESULTS ------------------
 
 function displayResults(data) {
@@ -319,33 +348,50 @@ function displayResults(data) {
   const chat = chats.find((c) => c.id === currentChatId);
   if (!chat) return;
 
-  // Ensure status exists (for older stored chats)
+  // Ensure status exists
   if (!chat.status) {
     chat.status = "Draft";
     saveChats();
+  }
+
+  // --- TRIP BRIEF (If Confirmed) ---
+  if (chat.status === "Confirmed" && data.bestChoice) {
+    const briefDiv = document.createElement("div");
+    briefDiv.style.background = "linear-gradient(135deg, #1e293b, #0f172a)";
+    briefDiv.style.border = "1px solid #10b981";
+    briefDiv.style.padding = "15px";
+    briefDiv.style.borderRadius = "10px";
+    briefDiv.style.marginBottom = "20px";
+    briefDiv.style.boxShadow = "0 4px 20px rgba(16, 185, 129, 0.1)";
+
+    briefDiv.innerHTML = `
+      <h4 style="margin:0 0 10px 0; color:#10b981; text-transform:uppercase; font-size:11px; letter-spacing:1px;">✅ Trip Finalized</h4>
+      <div style="font-size:14px; display:flex; flex-direction:column; gap:5px;">
+        <span><strong>Customer:</strong> ${chat.customerName}</span>
+        <span><strong>Airline:</strong> ${data.bestChoice.flight.airline}</span>
+        <span><strong>Route:</strong> ${data.bestChoice.flight.from} ✈️ ${data.bestChoice.flight.to}</span>
+        <span><strong>Price:</strong> ₹${data.bestChoice.flight.price}</span>
+      </div>
+    `;
+    container.appendChild(briefDiv);
   }
 
   // Status Badge
   const statusDiv = document.createElement("div");
   statusDiv.classList.add("status-badge");
   statusDiv.classList.add(
-    chat.status === "Confirmed"
-      ? "status-confirmed"
-      : chat.status === "Sent"
-      ? "status-sent"
-      : "status-draft",
+    chat.status === "Confirmed" ? "status-confirmed" : chat.status === "Sent" ? "status-sent" : "status-draft"
   );
   statusDiv.innerText = "Status: " + chat.status;
-
   container.appendChild(statusDiv);
 
   // Lifecycle Buttons
-  if (chat.status === "Draft") {
-    const btnRow = document.createElement("div");
-    btnRow.style.display = "flex";
-    btnRow.style.gap = "10px";
-    btnRow.style.marginBottom = "10px";
+  const btnRow = document.createElement("div");
+  btnRow.style.display = "flex";
+  btnRow.style.gap = "10px";
+  btnRow.style.marginBottom = "10px";
 
+  if (chat.status === "Draft") {
     const sendBtn = document.createElement("button");
     sendBtn.innerText = "Send to Customer";
     sendBtn.onclick = function () {
@@ -359,42 +405,42 @@ function displayResults(data) {
     alertBtn.innerText = "🔔 Simulate Price Drop";
     alertBtn.style.background = "#8b5cf6";
     alertBtn.onclick = function () {
-      addMessage(
-        "⚡ PROACTIVE ALERT: I've detected a ₹2,000 price drop on the Emirates flight! Should I update the itinerary?",
-        "copilot",
-      );
+      addMessage("⚡ PROACTIVE ALERT: I've detected a price drop! Should I update the itinerary?", "copilot");
     };
 
     btnRow.appendChild(sendBtn);
     btnRow.appendChild(alertBtn);
-    container.appendChild(btnRow);
   }
 
   if (chat.status === "Sent") {
     const confirmBtn = document.createElement("button");
     confirmBtn.innerText = "Mark as Confirmed";
-    confirmBtn.style.marginBottom = "10px";
-
     confirmBtn.onclick = function () {
-      confirmBtn.innerText = "⌛ Processing Booking...";
+      confirmBtn.innerText = "⌛ Processing...";
       confirmBtn.disabled = true;
-
       setTimeout(() => {
         chat.status = "Confirmed";
         saveChats();
         renderChatList();
         displayResults(chat.results);
-        addMessage(
-          "✅ Booking confirmed! The itinerary has been finalized.",
-          "copilot",
-        );
-      }, 2000);
+        addMessage("✅ Booking confirmed! The itinerary is now locked.", "copilot");
+      }, 1500);
     };
-
-    container.appendChild(confirmBtn);
+    btnRow.appendChild(confirmBtn);
   }
 
-  // Action Row (Draft Message + PDF)
+  // Multi-Service: Hotel Suggestion (If Confirmed)
+  if (chat.status === "Confirmed") {
+    const hotelBtn = document.createElement("button");
+    hotelBtn.innerText = "🏨 Find Stay in " + data.parsedInput.to;
+    hotelBtn.style.background = "#f59e0b";
+    hotelBtn.onclick = fetchHotels;
+    btnRow.appendChild(hotelBtn);
+  }
+
+  container.appendChild(btnRow);
+
+  // Action Row
   const actionRow = document.createElement("div");
   actionRow.style.display = "flex";
   actionRow.style.gap = "10px";
@@ -407,15 +453,26 @@ function displayResults(data) {
 
   const exportBtn = document.createElement("button");
   exportBtn.innerText = "📄 Export PDF";
-  exportBtn.onclick = function () {
-    window.print();
-  };
+  exportBtn.onclick = function () { window.print(); };
 
   actionRow.appendChild(draftBtn);
   actionRow.appendChild(exportBtn);
   container.appendChild(actionRow);
 
-  // Agent Briefing
+  // Alternative Note
+  if (data.alternativeNote) {
+    const altDiv = document.createElement("div");
+    altDiv.style.background = "rgba(239, 68, 68, 0.1)";
+    altDiv.style.borderLeft = "4px solid #ef4444";
+    altDiv.style.padding = "10px";
+    altDiv.style.marginBottom = "15px";
+    altDiv.style.fontSize = "13px";
+    altDiv.style.color = "#f87171";
+    altDiv.innerHTML = `💡 <strong>Note:</strong> ${data.alternativeNote}`;
+    container.appendChild(altDiv);
+  }
+
+  // Agent Briefing & Flexible Tips (Existing logic remains)
   if (data.destinationBrief) {
     const brief = data.destinationBrief;
     const briefDiv = document.createElement("div");
@@ -425,31 +482,11 @@ function displayResults(data) {
     briefDiv.style.borderRadius = "8px";
     briefDiv.style.marginBottom = "15px";
     briefDiv.style.fontSize = "13px";
-
     briefDiv.innerHTML = `
-      <h4 style="margin-top:0; color:#38bdf8; display:flex; align-items:center; gap:5px;">
-        🌍 Agent Briefing: ${data.parsedInput.to}
-      </h4>
-      <div style="display:flex; flex-direction:column; gap:5px;">
-        <span>🌡️ <strong>Weather:</strong> ${brief.weather}</span>
-        <span>🛂 <strong>Visa:</strong> ${brief.visa}</span>
-        <span style="color:#94a3b8; font-style:italic;">💡 ${brief.tip}</span>
-      </div>
+      <h4 style="margin-top:0; color:#38bdf8;">🌍 Agent Briefing: ${data.parsedInput.to}</h4>
+      <span>🌡️ <strong>Weather:</strong> ${brief.weather} | 🛂 <strong>Visa:</strong> ${brief.visa}</span>
     `;
     container.appendChild(briefDiv);
-  }
-
-  // Flexible Tip
-  if (data.flexibleTip) {
-    const tipDiv = document.createElement("div");
-    tipDiv.style.background = "rgba(245, 158, 11, 0.1)";
-    tipDiv.style.borderLeft = "4px solid #f59e0b";
-    tipDiv.style.padding = "10px";
-    tipDiv.style.marginBottom = "15px";
-    tipDiv.style.fontSize = "13px";
-    tipDiv.style.color = "#f59e0b";
-    tipDiv.innerHTML = `📅 <strong>Flexible Date Insight:</strong> ${data.flexibleTip}`;
-    container.appendChild(tipDiv);
   }
 
   // If no recommendations
@@ -460,77 +497,31 @@ function displayResults(data) {
     return;
   }
 
-  // Best Choice (safe check)
+  // Render Best Choice Card
   if (data.bestChoice && data.bestChoice.flight) {
     const best = data.bestChoice;
-    const tagsHtml = best.flight.tags
-      ? best.flight.tags
-          .map(
-            (t) =>
-              `<span style="background:#334155; padding:2px 6px; border-radius:4px; font-size:10px; margin-right:5px;">${t}</span>`,
-          )
-          .join("")
-      : "";
-
-    let returnHtml = "";
-    if (best.returnFlight) {
-      returnHtml = `
-        <div style="margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.2);">
-          <strong>🔄 Return: ${best.returnFlight.airline}</strong><br>
-          Departure: ${best.returnFlight.departure} | Arrival: ${best.returnFlight.arrival}
-        </div>
-      `;
-    }
-
     const bestDiv = document.createElement("div");
     bestDiv.classList.add("best-choice-card");
-
     bestDiv.innerHTML = `
-      <div style="margin-bottom:8px;">${tagsHtml}</div>
       <h3>🌟 Best Choice</h3>
       <strong>🛫 Outbound: ${best.flight.airline}</strong><br>
       Departure: ${best.flight.departure} | Arrival: ${best.flight.arrival}<br>
-      Price: ₹${best.flight.price}${best.returnFlight ? " (One Way)" : ""}<br>
-      ${returnHtml}
+      Price: ₹${best.flight.price}<br>
       <div style="margin-top:10px;"><strong>Reason:</strong> ${best.reason}</div>
     `;
-
     container.appendChild(bestDiv);
   }
 
   // Other Recommendations
   data.recommendations.forEach((rec) => {
     if (!rec.flight) return;
-    const tagsHtml = rec.flight.tags
-      ? rec.flight.tags
-          .map(
-            (t) =>
-              `<span style="background:#334155; padding:2px 6px; border-radius:4px; font-size:10px; margin-right:5px;">${t}</span>`,
-          )
-          .join("")
-      : "";
-
-    let returnHtml = "";
-    if (rec.returnFlight) {
-      returnHtml = `
-        <div style="margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.2);">
-          <strong>🔄 Return: ${rec.returnFlight.airline}</strong><br>
-          Departure: ${rec.returnFlight.departure} | Arrival: ${rec.returnFlight.arrival}
-        </div>
-      `;
-    }
-
     const div = document.createElement("div");
     div.classList.add("recommend-card");
-
     div.innerHTML = `
-      <div style="margin-bottom:8px;">${tagsHtml}</div>
       <strong>🛫 Outbound: ${rec.flight.airline}</strong><br>
-      Departure: ${rec.flight.departure} | Arrival: ${rec.flight.arrival}<br>
-      ${returnHtml}
-      <div style="margin-top:10px;"><strong>Reason:</strong> ${rec.reason}</div>
+      Price: ₹${rec.flight.price}<br>
+      <strong>Reason:</strong> ${rec.reason}
     `;
-
     container.appendChild(div);
   });
 }
