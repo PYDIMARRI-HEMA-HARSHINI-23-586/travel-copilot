@@ -6,6 +6,8 @@ Travel Copilot is an AI-powered flight recommendation assistant designed to help
 
 - **Modern Welcome Interface**: A clean, "ChatGPT-style" landing screen for new sessions, providing clear onboarding steps for travel agents.
 - **Agent Identity Management**: Easily update and personalize your professional profile with the built-in "Edit Agent Name" functionality.
+- **Robust AI Parsing**: Enhanced intent extraction that strictly follows user input, preventing hallucinations and ensuring accuracy in conversational follow-ups.
+- **Enhanced Session Persistence**: Advanced context-merging logic that maintains travel preferences (origin, destination, budget) across multiple turns in a session.
 - **Natural Language Parsing**: Extract travel details (origin, destination, budget, preferences) directly from conversational input using **Llama 3.1 8B**.
 - **Chat Management**: Support for multiple customer chats with persistent storage using `localStorage`.
 - **Status Lifecycle Tracking**: Track the full lifecycle of each recommendation: **Draft** (initial), **Sent** (itinerary shared with customer), and **Confirmed** (booking approved).
@@ -21,7 +23,6 @@ Travel Copilot is an AI-powered flight recommendation assistant designed to help
 - **Export as PDF**: Generate professional, print-ready booking summaries for customers with a single click.
 - **Agent Login Simulation**: A personalized experience that identifies the active travel agent, persisting the session locally.
 - **AI-Driven Reasoning**: Beyond just filtering, the system analyzes trade-offs between price, duration, and timing to recommend the "Best Choice" with human-like justifications.
-- **Session Persistence**: Maintains context within a session to handle follow-up queries (e.g., if a user doesn't specify a destination in a follow-up, it uses the last known one).
 - **Responsive Dashboard**: A modern interface featuring a sidebar for chat history and a main area for flight recommendations and AI insights.
 
 ---
@@ -32,11 +33,11 @@ The project follows a decoupled Client-Server architecture:
 
 ### **Backend (Node.js/Express)**
 - **Service Layer**:
-    - `parser.js`: Uses **Groq (Llama 3.1 8B Instant)** to transform raw text into structured JSON.
+    - `parser.js`: Uses **Groq (Llama 3.1 8B Instant)** to transform raw text into structured JSON with strict hallucination-prevention rules.
     - `reasoner.js`: Employs AI to evaluate flight options and provide human-like justification for recommendations.
     - `drafter.js`: Uses AI to generate professional client-facing summaries.
     - `destinationBrief.js`: Provides contextual knowledge about destinations (Weather, Visa, Tips).
-- **Routing**: RESTful API endpoints managed via Express.
+- **Routing**: RESTful API endpoints managed via Express with stateful session-merging logic.
 - **Data**: A mock flight database stored in `flights.json` containing fields like airline, departure/arrival times, price, duration, and layovers.
 
 ### **Frontend (Vanilla JS/CSS/HTML)**

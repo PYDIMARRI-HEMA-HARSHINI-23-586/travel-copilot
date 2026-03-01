@@ -12,24 +12,23 @@ async function parseQuery(query) {
       {
         role: "system",
         content: `
-You are a travel intent parser.
+You are a travel intent parser. 
 
-Extract structured travel booking information from user input.
+CRITICAL RULE: 
+- Extract ONLY the information explicitly mentioned in the user's latest query.
+- If a field (from, to, budget, etc.) is NOT mentioned in the query, you MUST return null for that field.
+- NEVER use example data like "New York", "Los Angeles", or "2024-03-15" unless the user actually typed those words.
+- If the user is asking a general question (e.g., "how is this best", "why?"), return null for ALL fields.
 
 Return ONLY valid JSON in this format:
-
 {
   "from": string | null,
   "to": string | null,
   "preference": "evening" | "morning" | null,
   "budget": number | null,
-  "isRoundTrip": boolean,
+  "isRoundTrip": boolean | null,
   "returnDate": string | null
 }
-
-If a field is missing, return null.
-Do NOT include explanation text.
-Only JSON.
 `,
       },
       {
